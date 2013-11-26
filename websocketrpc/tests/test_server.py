@@ -1,12 +1,13 @@
 import unittest
 import argparse
+import subprocess
 
 TEST_SERVER_PORT=18937
 from websocketrpc import Server, websocket
 
 class MyTestCase(unittest.TestCase):
     def test_start(self):
-        cmd=[__file__, '--port=%s' % TEST_SERVER_PORT, 'server']
+        cmd=['python', __file__, '--port=%s' % TEST_SERVER_PORT]
         pipe=subprocess.Popen(cmd)
         
 

@@ -1,10 +1,13 @@
 import uuid
+import json
 
 import logging
 logger=logging.getLogger(__name__)
 del(logging)
 
 from tornado.ioloop import IOLoop
+
+from websocketrpc.messages import Request, Reply
 
 class ProtocolException(Exception):
     pass
@@ -23,12 +26,74 @@ class Protocol(object):
 
     OtherEndPoint=None # class of other end point
 
+    def call_func(self, func_str, ws_connection, data=None):
+        '''
+         Caller calls func on remote
+         Example myclient.call_func(Server.FUNC_FOO, self.ws_connection, mydata) # TODO: make self.ws_connection optional.
+         '''
+        if not func_str in self.OtherEndPoint.funcs:
+            raise ProtocolException('Func %r unknown. Known: %s' % (
+                    func_str, self.OtherEndPoint.funcs))
+        call_id=unicode(uuid.uuid1())
+        request=Request(func_str, call_id, data, ws_connection)
+        logger.info('call_func %s connection=%s' % (request, ws_connection))
+        request.ws_connection.write_message(request.serialize())
+        self.wait_for_reply[call_id]=request
+
     def __init__(self, args, ioloop=None):
         self.wait_for_reply=dict()
         self.args=args
         if ioloop is None:
             ioloop=IOLoop.instance() # Singleton
         self.ioloop=ioloop
+
+    def ok(self, request):
+        pass
+
+    def error(self, request):
+        logger.warn(request)
+        
+    def exc(self, request):
+        logger.error('Exc: %s' % request)
+        
+    def send_protcol_error(self, message):
+        request=Request(func_str='error', call_id='error', data=None)
+        self.send_error(request, message)
+
+    def send_error(self, request, message):
+        self.send_reply(Protocol.ERROR, request, {Protocol.MESSAGE: message})
+
+    def send_exc(self, request, message):
+        self.send_reply(Protocol.EXC, request, {Protocol.MESSAGE: message})
+    
+    def send_ok(self, request, result):
+        self.send_reply(Protocol.OK, request, result)
+        
+    def send_reply(self, return_code, request, result):
+        request.ws_connection.write_message(json.dumps([return_code, request.call_id, result])) # TODO: only one json.dumps() in code.
+
+    def handle_reply(self, reply, result):
+        'Caller gets a reply'
+        assert reply.reply, reply
+        old_request=self.wait_for_reply.pop(reply.call_id, None)
+        if old_request is None:
+            logger.warn('Received Reply, but no wait_for_reply entry: %s' % reply)
+            return
+        msg='Reply: %s' % reply
+
+        if reply.func_str==Protocol.EXC:
+            print '################'
+            assert 0
+        if reply.func_str!=Protocol.OK:
+            logger.warn(msg)
+            return
+
+        logger.info(msg)
+        reply_func_str='reply_%s' % old_request.func_str
+        method=getattr(self, reply_func_str, None)
+        if method:
+            return method(old_request, reply)
+        logger.warn('No callback %r' % reply_func_str)
 
     def on_message(self, message):
         u'''
@@ -65,61 +130,3 @@ class Protocol(object):
             return self.send_exc(request, unicode(exc))
         request.finish(self, result)
 
-    def ok(self, request):
-        pass
-
-    def error(self, request):
-        logger.warn(request)
-        
-    def exc(self, request):
-        logger.error('Exc: %s' % request)
-        
-    def send_protcol_error(self, message):
-        request=Request(func_str='error', call_id='error', data=None)
-        self.send_error(request, message)
-
-    def send_error(self, request, message):
-        self.send_reply(Protocol.ERROR, request, {Protocol.MESSAGE: message})
-
-    def send_exc(self, request, message):
-        self.send_reply(Protocol.EXC, request, {Protocol.MESSAGE: message})
-    
-    def send_ok(self, request, result):
-        self.send_reply(Protocol.OK, request, result)
-        
-    def send_reply(self, return_code, request, result):
-        request.ws_connection.write_message(json.dumps([return_code, request.call_id, result])) # TODO: only one json.dumps() in code.
-
-    def call_func(self, func_str, ws_connection, data=None):
-        'Caller calls func on remote'
-        if not func_str in self.OtherEndPoint.funcs:
-            raise ProtocolException('Func %r unknown. Known: %s' % (
-                    func_str, self.OtherEndPoint.funcs))
-        call_id=unicode(uuid.uuid1())
-        request=Request(func_str, call_id, data, ws_connection)
-        logger.info('call_func %s connection=%s' % (request, ws_connection))
-        request.ws_connection.write_message(request.serialize())
-        self.wait_for_reply[call_id]=request
-
-    def handle_reply(self, reply, result):
-        'Caller gets a reply'
-        assert reply.reply, reply
-        old_request=self.wait_for_reply.pop(reply.call_id, None)
-        if old_request is None:
-            logger.warn('Received Reply, but no wait_for_reply entry: %s' % reply)
-            return
-        msg='Reply: %s' % reply
-
-        if reply.func_str==Protocol.EXC:
-            print '################'
-            assert 0
-        if reply.func_str!=Protocol.OK:
-            logger.warn(msg)
-            return
-
-        logger.info(msg)
-        reply_func_str='reply_%s' % old_request.func_str
-        method=getattr(self, reply_func_str, None)
-        if method:
-            return method(old_request, reply)
-        logger.warn('No callback %r' % reply_func_str)
