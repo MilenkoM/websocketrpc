@@ -34,6 +34,9 @@ class Server(Protocol):
                 (r"/", cls, {'args': args}),
                 ])
 
-        application.listen(args.port)
+        try:
+            application.listen(args.port)
+        except Exception, exc:
+            raise exc.__class__('%s port: %s' % (exc, args.port))
 
         IOLoop.instance().start()
