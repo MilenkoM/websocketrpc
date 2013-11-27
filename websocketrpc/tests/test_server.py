@@ -9,7 +9,13 @@ class MyTestCase(unittest.TestCase):
     def test_start(self):
         cmd=['python', __file__, '--port=%s' % TEST_SERVER_PORT]
         pipe=subprocess.Popen(cmd)
-        
+        try:
+            self._test_start(pipe)
+        finally:
+            pipe.terminate()
+
+    def _test_start(self, pipe):
+        pass
 
 class TestServer(Server, websocket.WebSocketHandler): # TODO switch from multiple inheritance to delegation
 
