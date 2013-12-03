@@ -1,42 +1,52 @@
-import argparse
-
 import logging
 logger=logging.getLogger(__name__)
 del(logging)
 
-from websocketrpc.protocol import Protocol
-from tornado.web import Application
-from tornado.ioloop import IOLoop
+from pulsar import Queue
+from pulsar.apps import wsgi
 
-class Server(Protocol):
-    FUNC_TEST_EXCEPTION='test_exception'
+from tinyrpc.transports import ServerTransport
+from tinyrpc.server import RPCServer
+from tinyrpc.protocols.jsonrpc import JSONRPCProtocol
 
-    funcs=[
-        Protocol.OK,
-        Protocol.ERROR,
-        Protocol.EXC,
-        FUNC_TEST_EXCEPTION,
-        ]
+class WebSocketServerTransport(ServerTransport):
+    def __init__(self, queue_class=Queue):
+        self._queue_class = queue_class
+        self.messages = queue_class()
 
-    @classmethod
-    def get_argument_parser(cls, name='WebSocketRPC Server'):
-        parser=argparse.ArgumentParser(name)
-        parser.add_argument('--port', default=8888, type=int)
-        return parser
+from tinyrpc.dispatch import RPCDispatcher
 
-    @classmethod
-    def parse_args_and_run(cls):
-        parser=cls.get_argument_parser()
+dispatcher = RPCDispatcher()
 
-        args=parser.parse_args()
+class AppHandler(wsgi.LazyWsgi): # used to be WebChat
 
-        application = Application([
-                (r"/", cls, {'args': args}),
-                ])
+    def __init__(self, name):
+        self.name = name
+        transport = WebSocketServerTransport(queue_class=Queue)
+        rpc_server = RPCServer(
+            transport,
+            JSONRPCProtocol(),
+            dispatcher
+            )
+        
+    def setup(self):
+        backend = self.cfg.get('backend_server')
+        return wsgi.WsgiHandler([ws.WebSocket('/jsonrpc', MessungWSHandler())])
 
-        try:
-            application.listen(args.port)
-        except Exception, exc:
-            raise exc.__class__('%s port: %s' % (exc, args.port))
+    @property
+    def cfg(self): # TODO: needed?
+        '''Get the ``config`` object from the actor.'''
+        actor = pulsar.get_actor()
+        if actor.is_arbiter():
+            actor = actor.get_actor(self.name)
+        return actor.cfg
 
-        IOLoop.instance().start()
+    @dispatcher.public
+    def register_client(self, user_id):
+        assert 0
+
+def server(name='wsgi'):
+    return wsgi.WSGIServer(callable=AppHandler(name), name=name)
+
+def main():
+    server().start()
