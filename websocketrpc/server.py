@@ -37,41 +37,12 @@ class Server(Protocol):
 
 class RPCSocketHandler(WebSocketHandler):
     '''
-    This is not a singleton. There is an instance for every client.
+    This is **not** a singleton. There is an instance for every client.
     '''
-
-    waiters = set()
-    cache = []
-    cache_size = 200
 
     protocol=JSONRPCProtocol() # one instance is enough.
 
-    procedures=None # this needs to be implemented by a subclass
-
-    def allow_draft76(self):
-        # for iOS 5.0 Safari
-        return True
-
-    def open(self):
-        RPCSocketHandler.waiters.add(self)
-
-    def on_close(self):
-        RPCSocketHandler.waiters.remove(self)
-
-    @classmethod
-    def update_cache(cls, chat):
-        cls.cache.append(chat)
-        if len(cls.cache) > cls.cache_size:
-            cls.cache = cls.cache[-cls.cache_size:]
-
-    @classmethod
-    def send_updates(cls, chat):
-        logging.info("sending message to %d waiters", len(cls.waiters))
-        for waiter in cls.waiters:
-            try:
-                waiter.write_message(chat)
-            except:
-                logging.error("Error sending message", exc_info=True)
+    procedures=None # this needs to be implemented by a subclass. Dict: method_string --> method_callback
 
     def on_message(self, message):
         json_request=self.protocol.parse_request(message)

@@ -27,9 +27,15 @@ class ClientRequest(object):
             self.on_error=on_error
 
     def on_reply(self, result):
+        '''
+        This method gets overridden by the "on_reply" callback you pass to call()
+        '''
         logger.info(result)
 
     def on_error(self, error_response):
+        '''
+        This method gets overridden by the "on_error" callback you pass to call()
+        '''
         logger.error(error_response.serialize())
 
     def serialize(self):
@@ -99,12 +105,6 @@ class Client(object):
     def stop(self):
         self.ioloop.stop()
 
-    def message_from_server(self, request):
-        if self.args.exit_after_message_from_server:
-            logger.info('exit_after_message_from_server %s' % request)
-            self.ioloop.add_timeout(3, self.stop)
-            return
-        
     @classmethod
     def get_argument_parser(cls):
         parser=argparse.ArgumentParser()
