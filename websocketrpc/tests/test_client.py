@@ -24,6 +24,7 @@ class TestClient(Client):
         logging.info('test_datatypes: OK')
 
     def ws_connection_cb(self, conn):
+        # Called after the websocket to the server is connected.
         Client.ws_connection_cb(self, conn)
         self.call('foo', on_reply=self.on_fail_reply, on_error=self.on_good_error)
         self.call('reverse', args=['abcd'], on_reply=self.on_reverse_reply, on_error=self.on_fail_error)
