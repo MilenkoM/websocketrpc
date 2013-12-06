@@ -1,23 +1,5 @@
 #!/usr/bin/env python
 # based on tornado chat example
-#
-# Copyright 2009 Facebook
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
-# not use this file except in compliance with the License. You may obtain
-# a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations
-# under the License.
-"""Simplified chat demo for websockets.
-
-Authentication, error handling, etc are left as an exercise for the reader :)
-"""
 
 import logging
 import tornado.escape
@@ -36,8 +18,7 @@ define("port", default=8888, help="run on the given port", type=int)
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r"/", MainHandler),
-            (r"/chatsocket", ChatSocketHandler),
+            (r"/chatsocket", RPCSocketHandler),
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
@@ -48,11 +29,7 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **settings)
 
 
-class MainHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.render("index.html", messages=ChatSocketHandler.cache)
-
-class ChatSocketHandler(tornado.websocket.WebSocketHandler):
+class RPCSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()
     cache = []
     cache_size = 200
@@ -62,10 +39,10 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def open(self):
-        ChatSocketHandler.waiters.add(self)
+        RPCSocketHandler.waiters.add(self)
 
     def on_close(self):
-        ChatSocketHandler.waiters.remove(self)
+        RPCSocketHandler.waiters.remove(self)
 
     @classmethod
     def update_cache(cls, chat):
@@ -92,8 +69,8 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         chat["html"] = tornado.escape.to_basestring(
             self.render_string("message.html", message=chat))
 
-        ChatSocketHandler.update_cache(chat)
-        ChatSocketHandler.send_updates(chat)
+        RPCSocketHandler.update_cache(chat)
+        RPCSocketHandler.send_updates(chat)
 
 
 def main():
