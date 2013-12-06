@@ -2,6 +2,7 @@
 # Example of websocket_connect https://gist.github.com/fcicq/5328876
 import argparse
 import datetime
+import uuid
 
 import logging
 logger=logging.getLogger(__name__)
@@ -10,7 +11,7 @@ del(logging)
 from tornado import websocket
 
 from .protocol import Protocol
-
+from .messages import ClientRequest
 
 class Client(Protocol):
 
@@ -20,9 +21,6 @@ class Client(Protocol):
     FUNC_MESSAGE_FROM_SERVER='message_from_server'
     
     funcs=[
-        Protocol.OK,
-        Protocol.ERROR,
-        Protocol.EXC,
         FUNC_MESSAGE_FROM_SERVER,
         ]
 
@@ -41,6 +39,17 @@ class Client(Protocol):
         self.ws_connection=conn.result()
         self.ws_connection.on_message=self.on_message # Overwrite method. Dirty, but AFAIK inheritance is not possible here.
         self.keepalive = self.ioloop.add_timeout(datetime.timedelta(seconds=self.KEEPALIVE_TIMEOUT), self.do_keep_alive)
+
+    def call_func(self, func_str, data=None, on_reply=None, on_exception=None):
+        '''
+         Caller calls func on remote
+         Example myclient.call_func(Server.FUNC_FOO, self.ws_connection, mydata) # TODO: make self.ws_connection optional.
+         '''
+        call_id=unicode(uuid.uuid1())
+        request=ClientRequest(func_str, call_id, data, self.ws_connection, on_reply, on_exception)
+        logger.info('call_func %s connection=%s' % (request, self.ws_connection))
+        request.ws_connection.write_message(request.serialize())
+        self.wait_for_reply[call_id]=request
 
     def do_keep_alive(self, *args, **kwargs):
         logger.info('---> do_keep_alive')
@@ -88,3 +97,18 @@ class Client(Protocol):
         except KeyboardInterrupt:
             client.close()
 
+    def on_message(self, message):
+        'Client: message is reponse'
+        if message is None:
+            # happens on close: TODO: needed?
+            return
+        try:
+            func_str, cls, call_id, data = self.deserialize(message)            
+        except ValueError, exc:
+            raise ValueError('could not parse data: %r' % message)
+
+        request=self.wait_for_reply[call_id]
+        if cls==message.CLS_REPLY_OK:
+            request.on_reply(data)
+        elif cls==message.CLS_REPLY_EXC:
+            request.on_exception(data)

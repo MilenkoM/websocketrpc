@@ -1,3 +1,4 @@
+import logging
 import unittest
 import argparse
 import subprocess
@@ -28,4 +29,5 @@ def main():
     TestServer.parse_args_and_run()
 
 if __name__=='__main__':
+    logging.basicConfig(level=logging.DEBUG)
     main()
