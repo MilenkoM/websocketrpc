@@ -10,7 +10,7 @@ del(logging)
 
 from tornado import websocket
 from tornado.ioloop import IOLoop
-from tinyrpc.protocols.jsonrpc import JSONRPCProtocol
+from tinyrpc.protocols.jsonrpc import JSONRPCProtocol, JSONRPCErrorResponse
 
 class ClientProtocol(JSONRPCProtocol):
     def _get_unique_id(self):
@@ -18,11 +18,19 @@ class ClientProtocol(JSONRPCProtocol):
         
 class ClientRequest(object):
     'Request class for the client part'
-    def __init__(self, json_request, ws_connection, on_reply, on_exception):
+    def __init__(self, json_request, ws_connection, on_reply, on_error):
         self.json_request=json_request # from tinyrpc
         self.ws_connection=ws_connection
-        self.on_reply=on_reply
-        self.on_exception=on_exception
+        if on_reply:
+            self.on_reply=on_reply
+        if on_error:
+            self.on_error=on_error
+
+    def on_reply(self, result):
+        logger.info(result)
+
+    def on_error(self, error_response):
+        logger.error(error_response.serialize())
 
     def serialize(self):
         return self.json_request.serialize()
@@ -56,13 +64,13 @@ class Client(object):
         self.ws_connection.on_message=self.on_message # Overwrite method. Dirty, but AFAIK inheritance is not possible here.
         self.keepalive = self.ioloop.add_timeout(datetime.timedelta(seconds=self.KEEPALIVE_TIMEOUT), self.do_keep_alive)
 
-    def call(self, func_str, args=None, kwargs=None, on_reply=None, on_exception=None):
+    def call(self, func_str, args=None, kwargs=None, on_reply=None, on_error=None):
         '''
          Caller calls func on remote
          Example myclient.call_func(Server.FUNC_FOO, self.ws_connection, mydata) # TODO: make self.ws_connection optional.
          '''
         json_request=self.protocol.create_request(func_str, args=args, kwargs=kwargs)
-        request=ClientRequest(json_request, self.ws_connection, on_reply, on_exception)
+        request=ClientRequest(json_request, self.ws_connection, on_reply, on_error)
         logger.info('call_func %s connection=%s' % (request, self.ws_connection))
         request.ws_connection.write_message(request.serialize())
         self.wait_for_reply[request.unique_id]=request
@@ -114,17 +122,30 @@ class Client(object):
             client.close()
 
     def on_message(self, message):
-        'Client: message is reponse'
+        try:
+            self._on_message(message)
+        except Exception, exc:
+            # tornado hides exceptions. We do our own logging
+            logger.error(exc, exc_info=True)
+            raise
+
+    def _on_message(self, message):
+        'Client: message is a reponse'
+        print 'on_message client ........... %r' % message
         if message is None:
             # happens on close: TODO: needed?
             return
-        try:
-            func_str, cls, call_id, data = self.deserialize(message)            
-        except ValueError, exc:
-            raise ValueError('could not parse data: %r' % message)
-
-        request=self.wait_for_reply[call_id]
-        if cls==message.CLS_REPLY_OK:
-            request.on_reply(data)
-        elif cls==message.CLS_REPLY_EXC:
-            request.on_exception(data)
+        json_reply=self.protocol.parse_reply(message)
+        print '###'
+        request=self.wait_for_reply[json_reply.unique_id]
+        print 'sdf'
+        if isinstance(json_reply, JSONRPCErrorResponse):
+            print 'on_exc'
+            request.on_error(json_reply)
+            return
+        elif isinstance(json_reply, JSONRPCResponse):
+            print 'on_repl'
+            request.on_reply(json_reply)
+            return
+        print 'sdfff'
+        raise ValueError('unsupported reply: %r' % json_reply)
