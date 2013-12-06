@@ -26,8 +26,6 @@ class Client(Protocol):
         FUNC_MESSAGE_FROM_SERVER,
         ]
 
-    OtherEndPoint=None
-
     ws_connection=None # available after successfull connect()
 
     def __init__(self, args, ioloop=None):

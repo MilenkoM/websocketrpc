@@ -24,16 +24,11 @@ class Protocol(object):
     MESSAGE='message'
     REPLIES=[OK, ERROR]
 
-    OtherEndPoint=None # class of other end point
-
     def call_func(self, func_str, ws_connection, data=None):
         '''
          Caller calls func on remote
          Example myclient.call_func(Server.FUNC_FOO, self.ws_connection, mydata) # TODO: make self.ws_connection optional.
          '''
-        if not func_str in self.OtherEndPoint.funcs:
-            raise ProtocolException('Func %r unknown. Known: %s' % (
-                    func_str, self.OtherEndPoint.funcs))
         call_id=unicode(uuid.uuid1())
         request=Request(func_str, call_id, data, ws_connection)
         logger.info('call_func %s connection=%s' % (request, ws_connection))
