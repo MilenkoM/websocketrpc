@@ -1,19 +1,33 @@
 import sys
 import logging
+
 from websocketrpc import Client
+from websocketrpc.tests import test_datatypes
 
 class TestClient(Client):
-    def on_reply(self, data):
-        assert 0, data
+    def on_reverse_reply(self, mystring):
+        assert mystring=='dcba', mystring
+        logger.info('reverse OK')
 
-    def on_error(self, error_response):
+    def on_fail_reply(self, data):
+        raise Exception(data)
+
+    def on_good_error(self, error_response):
         assert error_response.error=="Method foo not implemented", error_response.error
         logger.info('error_response ... good, that is what I wanted: %s' % error_response.serialize())
 
+    def on_fail_error(self, error_response):
+        raise Exception(error_response.serialize())
+
+    def on_test_datatypes_reply(self, result):
+        assert result==test_datatypes
+        logging.info('test_datatypes: OK')
+
     def ws_connection_cb(self, conn):
         Client.ws_connection_cb(self, conn)
-        ### start call
-        self.call('foo', on_reply=self.on_reply, on_error=self.on_error)
+        self.call('foo', on_reply=self.on_fail_reply, on_error=self.on_good_error)
+        self.call('reverse', args=['abcd'], on_reply=self.on_reverse_reply, on_error=self.on_fail_error)
+        self.call('test_datatypes', on_reply=self.on_test_datatypes_reply, on_error=self.on_fail_error)
 
 def main():
     TestClient.parse_args_and_run()
@@ -24,4 +38,3 @@ if __name__=='__main__':
     main()
 else:
     logger=logging.getLogger(__name__)
-    

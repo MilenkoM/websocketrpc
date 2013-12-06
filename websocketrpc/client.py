@@ -10,7 +10,7 @@ del(logging)
 
 from tornado import websocket
 from tornado.ioloop import IOLoop
-from tinyrpc.protocols.jsonrpc import JSONRPCProtocol, JSONRPCErrorResponse
+from tinyrpc.protocols.jsonrpc import JSONRPCProtocol, JSONRPCErrorResponse, JSONRPCSuccessResponse
 
 class ClientProtocol(JSONRPCProtocol):
     def _get_unique_id(self):
@@ -131,21 +131,16 @@ class Client(object):
 
     def _on_message(self, message):
         'Client: message is a reponse'
-        print 'on_message client ........... %r' % message
+        #print 'on_message client ........... %r' % message
         if message is None:
             # happens on close: TODO: needed?
             return
         json_reply=self.protocol.parse_reply(message)
-        print '###'
         request=self.wait_for_reply[json_reply.unique_id]
-        print 'sdf'
         if isinstance(json_reply, JSONRPCErrorResponse):
-            print 'on_exc'
             request.on_error(json_reply)
             return
-        elif isinstance(json_reply, JSONRPCResponse):
-            print 'on_repl'
-            request.on_reply(json_reply)
+        elif isinstance(json_reply, JSONRPCSuccessResponse):
+            request.on_reply(json_reply.result)
             return
-        print 'sdfff'
         raise ValueError('unsupported reply: %r' % json_reply)

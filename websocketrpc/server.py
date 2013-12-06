@@ -79,7 +79,6 @@ class RPCSocketHandler(WebSocketHandler):
         if callback is None:
             response=json_request.error_respond('Method %s not implemented' % json_request.method)
         else:
-            result=callback(*args, **kwargs)
-            response=JSONRPCSuccessResponse(result)
-        print 'writing response ...'
+            result=callback(*json_request.args, **json_request.kwargs)
+            response=json_request.respond(result)
         self.write_message(response.serialize())

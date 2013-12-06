@@ -12,16 +12,22 @@ import uuid
 
 from tornado.options import define, options
 from websocketrpc.server import RPCSocketHandler
+from websocketrpc.tests import test_datatypes
 
 define("port", default=8888, help="run on the given port", type=int) # TODO ???
 
 def do_reverse(mystring):
-    return mystring.reverse()
+    return ''.join(reversed(mystring))
+
+def do_test_datatypes():
+    return test_datatypes
 
 class TestHandler(RPCSocketHandler):
     procedures={
         'reverse': do_reverse,
+        'test_datatypes': do_test_datatypes,
         }
+
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
