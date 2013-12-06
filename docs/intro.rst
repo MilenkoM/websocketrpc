@@ -20,4 +20,11 @@ Installation
 Usage
 -----
 
-Have a look at tests/test_server.py and tests/test_client.py to see how it works.
+Have a look at tests/websocketrpc_server.py and tests/websocketrpc_client.py to see how it works.
+
+Running Tests
+-------------
+
+.. code-block:: sh
+    
+    cd websocketrpc/tests; python -m unittest discover
