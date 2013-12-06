@@ -13,11 +13,7 @@ class ProtocolException(Exception):
 class Protocol(object):
     
     def __init__(self, args, ioloop=None):
-        self.wait_for_reply=dict()
-        self.args=args
-        if ioloop is None:
-            ioloop=IOLoop.instance() # Singleton
-        self.ioloop=ioloop
+        assert 0
 
     def ok(self, request):
         pass

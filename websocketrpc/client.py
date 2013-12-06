@@ -9,25 +9,41 @@ logger=logging.getLogger(__name__)
 del(logging)
 
 from tornado import websocket
+from tornado.ioloop import IOLoop
+from tinyrpc.protocols.jsonrpc import JSONRPCProtocol
 
-from .protocol import Protocol
-from .messages import ClientRequest
+class ClientProtocol(JSONRPCProtocol):
+    def _get_unique_id(self):
+        return unicode(uuid.uuid1())
+        
+class ClientRequest(object):
+    'Request class for the client part'
+    def __init__(self, json_request, ws_connection, on_reply, on_exception):
+        self.json_request=json_request # from tinyrpc
+        self.ws_connection=ws_connection
+        self.on_reply=on_reply
+        self.on_exception=on_exception
 
-class Client(Protocol):
+    def serialize(self):
+        return self.json_request.serialize()
 
-    KEEPALIVE_TIMEOUT = 2 # seconds
-    keepalive=None
+    @property
+    def unique_id(self):
+        return self.json_request.unique_id
 
-    FUNC_MESSAGE_FROM_SERVER='message_from_server'
-    
-    funcs=[
-        FUNC_MESSAGE_FROM_SERVER,
-        ]
+class Client(object):
 
     ws_connection=None # available after successfull connect()
+    
+    KEEPALIVE_TIMEOUT=20
 
     def __init__(self, args, ioloop=None):
-        Protocol.__init__(self, args, ioloop)
+        self.wait_for_reply=dict()
+        self.args=args
+        if ioloop is None:
+            ioloop=IOLoop.instance() # Singleton
+        self.ioloop=ioloop
+        self.protocol=ClientProtocol()
 
     def connect(self):
         #logger.info('connect %s' % self.args)
@@ -40,16 +56,16 @@ class Client(Protocol):
         self.ws_connection.on_message=self.on_message # Overwrite method. Dirty, but AFAIK inheritance is not possible here.
         self.keepalive = self.ioloop.add_timeout(datetime.timedelta(seconds=self.KEEPALIVE_TIMEOUT), self.do_keep_alive)
 
-    def call_func(self, func_str, data=None, on_reply=None, on_exception=None):
+    def call(self, func_str, args=None, kwargs=None, on_reply=None, on_exception=None):
         '''
          Caller calls func on remote
          Example myclient.call_func(Server.FUNC_FOO, self.ws_connection, mydata) # TODO: make self.ws_connection optional.
          '''
-        call_id=unicode(uuid.uuid1())
-        request=ClientRequest(func_str, call_id, data, self.ws_connection, on_reply, on_exception)
+        json_request=self.protocol.create_request(func_str, args=args, kwargs=kwargs)
+        request=ClientRequest(json_request, self.ws_connection, on_reply, on_exception)
         logger.info('call_func %s connection=%s' % (request, self.ws_connection))
         request.ws_connection.write_message(request.serialize())
-        self.wait_for_reply[call_id]=request
+        self.wait_for_reply[request.unique_id]=request
 
     def do_keep_alive(self, *args, **kwargs):
         logger.info('---> do_keep_alive')
@@ -83,7 +99,7 @@ class Client(Protocol):
     @classmethod
     def get_argument_parser(cls):
         parser=argparse.ArgumentParser()
-        parser.add_argument('--url', default='ws://localhost:8888/')
+        parser.add_argument('--url', default='ws://localhost:8888/jsonrpc')
         return parser
     
     @classmethod

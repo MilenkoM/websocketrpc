@@ -1,5 +1,4 @@
 from websocketrpc import Client
-from websocketrpc.tests.test_server import TestServer
 
 class TestClient(Client):
     def on_reply(self, data):
@@ -7,7 +6,8 @@ class TestClient(Client):
 
     def ws_connection_cb(self, conn):
         Client.ws_connection_cb(self, conn)
-        self.call_func(TestServer.FUNC_TEST_EXCEPTION, on_reply=self.on_reply)
+        ### start call
+        self.call('foo', on_reply=self.on_reply)
 
 def main():
     TestClient.parse_args_and_run()

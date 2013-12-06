@@ -11,14 +11,21 @@ import os.path
 import uuid
 
 from tornado.options import define, options
+from websocketrpc.server import RPCSocketHandler
 
-define("port", default=8888, help="run on the given port", type=int)
+define("port", default=8888, help="run on the given port", type=int) # TODO ???
 
+def do_reverse(mystring):
+    return mystring.reverse()
 
+class TestHandler(RPCSocketHandler):
+    procedures={
+        'reverse': do_reverse,
+        }
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r"/chatsocket", RPCSocketHandler),
+            (r"/jsonrpc", TestHandler),
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
@@ -27,51 +34,6 @@ class Application(tornado.web.Application):
             xsrf_cookies=True,
         )
         tornado.web.Application.__init__(self, handlers, **settings)
-
-
-class RPCSocketHandler(tornado.websocket.WebSocketHandler):
-    waiters = set()
-    cache = []
-    cache_size = 200
-
-    def allow_draft76(self):
-        # for iOS 5.0 Safari
-        return True
-
-    def open(self):
-        RPCSocketHandler.waiters.add(self)
-
-    def on_close(self):
-        RPCSocketHandler.waiters.remove(self)
-
-    @classmethod
-    def update_cache(cls, chat):
-        cls.cache.append(chat)
-        if len(cls.cache) > cls.cache_size:
-            cls.cache = cls.cache[-cls.cache_size:]
-
-    @classmethod
-    def send_updates(cls, chat):
-        logging.info("sending message to %d waiters", len(cls.waiters))
-        for waiter in cls.waiters:
-            try:
-                waiter.write_message(chat)
-            except:
-                logging.error("Error sending message", exc_info=True)
-
-    def on_message(self, message):
-        logging.info("got message %r", message)
-        parsed = tornado.escape.json_decode(message)
-        chat = {
-            "id": str(uuid.uuid4()),
-            "body": parsed["body"],
-            }
-        chat["html"] = tornado.escape.to_basestring(
-            self.render_string("message.html", message=chat))
-
-        RPCSocketHandler.update_cache(chat)
-        RPCSocketHandler.send_updates(chat)
-
 
 def main():
     tornado.options.parse_command_line()

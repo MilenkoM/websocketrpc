@@ -33,16 +33,6 @@ class BaseRequest(object):
     def serialize(self):
         return json.dumps([self.func_str, self.cls, self.call_id, self.data])
 
-class ClientRequest(BaseRequest):
-    'Request class for the client part'
-    def __init__(self, func_str, call_id, data, ws_connection, on_reply, on_exception):
-        BaseRequest.__init__(self, CLS_REQUEST, func_str, call_id, data, ws_connection)
-        self.on_reply=on_reply
-        self.on_exception=on_exception
-
-    def finish(self, protocol, result):
-        return protocol.send_ok(self, result)
-
 class ServerRequest(BaseRequest):
     def __init__(self, func_str, call_id, data, ws_connection):
         BaseRequest.__init__(self, CLS_REQUEST, func_str, call_id, data, ws_connection)
