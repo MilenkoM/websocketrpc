@@ -52,6 +52,7 @@ class Client(object):
             ioloop=IOLoop.instance() # Singleton
         self.ioloop=ioloop
         self.protocol=ClientProtocol()
+        self.keepalive=None
 
     def connect(self):
         #logger.info('connect %s' % self.args)

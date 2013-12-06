@@ -8,13 +8,12 @@ import tornado.options
 import tornado.web
 import tornado.websocket
 import os.path
-import uuid
 
 from tornado.options import define, options
 from websocketrpc.server import RPCSocketHandler
 from websocketrpc.tests import test_datatypes
 
-define("port", default=8888, help="run on the given port", type=int) # TODO ???
+define("port", default=8888, help="run on the given port", type=int)
 
 def do_reverse(mystring):
     return ''.join(reversed(mystring))
@@ -33,13 +32,7 @@ class Application(tornado.web.Application):
         handlers = [
             (r"/jsonrpc", TestHandler),
         ]
-        settings = dict(
-            cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
-            template_path=os.path.join(os.path.dirname(__file__), "templates"),
-            static_path=os.path.join(os.path.dirname(__file__), "static"),
-            xsrf_cookies=True,
-        )
-        tornado.web.Application.__init__(self, handlers, **settings)
+        tornado.web.Application.__init__(self, handlers)
 
 def main():
     tornado.options.parse_command_line()
