@@ -20,7 +20,7 @@ Installation
 Usage
 -----
 
-Have a look at tests/websocketrpc_server.py and tests/websocketrpc_client.py to see how it works.
+Have a look at tests/server.py and tests/client.py to see how it works.
 
 Running Tests
 -------------

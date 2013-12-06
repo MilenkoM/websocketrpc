@@ -51,7 +51,7 @@ class Client(object):
     
     KEEPALIVE_TIMEOUT=20
 
-    def __init__(self, args, ioloop=None):
+    def __init__(self, args=None, ioloop=None):
         self.wait_for_reply=dict()
         self.args=args
         if ioloop is None:
