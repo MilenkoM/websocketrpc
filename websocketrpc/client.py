@@ -152,7 +152,6 @@ class Client(object):
 
     def _on_message(self, message):
         'Client: message is a reponse'
-        # print 'on_message client ........... %r' % message
         if message is None:
             # happens on close: TODO: needed?
             return
