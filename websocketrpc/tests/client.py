@@ -5,9 +5,15 @@ from websocketrpc import Client
 from websocketrpc.tests import test_datatypes
 
 class TestClient(Client):
+
+    def ok(self):
+        # Implemented in tornado TestRpc
+        pass
+
     def on_reverse_reply(self, mystring):
         assert mystring=='dcba', mystring
         logger.info('reverse OK')
+        self.ok()
 
     def on_fail_reply(self, data):
         raise Exception(data)
@@ -15,6 +21,7 @@ class TestClient(Client):
     def on_good_error(self, error_response):
         assert error_response.error=="Method foo not implemented", error_response.error
         logger.info('error_response ... good, that is what I wanted: %s' % error_response.serialize())
+        self.ok()
 
     def on_fail_error(self, error_response):
         raise Exception(error_response.serialize())
@@ -22,6 +29,7 @@ class TestClient(Client):
     def on_test_datatypes_reply(self, result):
         assert result==test_datatypes
         logging.info('test_datatypes: OK')
+        self.ok()
 
     def ws_connection_cb(self, conn):
         # Called after the websocket to the server is connected.

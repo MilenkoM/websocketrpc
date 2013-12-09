@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+OK='OK'
+
 test_datatypes=dict(
         myint=123456890,
         myunicode=u'German Umlauts: üöäßÜÖÄ',
