@@ -21,7 +21,7 @@ It depends on:
 Docs
 ----
 
-https://readthedocs.org/projects/websocketrpc/
+http://websocketrpc.readthedocs.org/en/latest/
 
 
 Installation
