@@ -26,11 +26,6 @@ class TestRpcClient(websocketrpc.Client):
     def ok(self):
         return self.test_case.stop(OK)
 
-    #def ws_connection_cb(self, conn):
-    #    assert 0
-    #    # Called after the websocket to the server is connected.
-    #    websocketrpc.Client.ws_connection_cb(self, conn)
-
     def on_reply_n_times(self, i):
         self.reply_n_times_seen.add(i)
         if self.reply_n_times_seen == set([
