@@ -12,6 +12,7 @@ from tinyrpc.protocols.jsonrpc import JSONRPCProtocol, JSONRPCErrorResponse
 
 
 class RPCSocketHandler(WebSocketHandler):
+
     '''
     This is **not** a singleton. There is an instance for every client.
     '''
@@ -35,16 +36,17 @@ class RPCSocketHandler(WebSocketHandler):
             return
         try:
             result = callback(json_request)
-        except Exception, exc:
+        except Exception as exc:
             response = json_request.error_respond(repr(exc))
             self.write_message(response.serialize())
             return
-            
+
         return self.return_result(result, json_request)
 
     def return_result(self, result, json_request):
         response = json_request.respond(result)
         self.write_message(response.serialize())
+
 
 class Server(object):
 

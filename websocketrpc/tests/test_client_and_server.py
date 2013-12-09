@@ -16,6 +16,7 @@ import websocketrpc
 from websocketrpc.server import Procedure
 from websocketrpc.tests import OK, test_datatypes
 
+
 class TestRpcClient(websocketrpc.Client):
 
     def __init__(self, ioloop, test_case):
@@ -32,7 +33,7 @@ class TestRpcClient(websocketrpc.Client):
                 None,  # This is from the first call. 3 calls follow later.
                 0, 1, 2]):
             self.test_case.stop(OK)
-            
+
     def on_exception_good(self, message):
         self.test_case.assertEqual('''ValueError('foo',)''', message.error)
         return self.test_case.stop(OK)
@@ -60,6 +61,7 @@ class TestRpcClient(websocketrpc.Client):
         logging.info('test_datatypes: OK')
         self.ok()
 
+
 def do_reverse(mystring):
     return ''.join(reversed(mystring))
 
@@ -67,8 +69,10 @@ def do_reverse(mystring):
 def do_test_datatypes():
     return test_datatypes
 
+
 def raise_exception():
     raise ValueError('foo')
+
 
 class TestRpcHandler(websocketrpc.server.RPCSocketHandler):
     procedures = {
@@ -101,7 +105,6 @@ class Application(tornado.web.Application):
             (r"/jsonrpc", TestRpcHandler),
         ]
         tornado.web.Application.__init__(self, handlers)
-
 
 
 class TestRpc(AsyncHTTPTestCase):
