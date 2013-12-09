@@ -3,6 +3,7 @@ import setuptools
 
 version = "0.1"
 
+
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
@@ -17,9 +18,9 @@ setuptools.setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        ],
+    ],
     install_requires=[
         'tornado',
         'tinyrpc',
-        ]
+    ]
 )

@@ -15,24 +15,30 @@ from websocketrpc.tests import test_datatypes
 
 define("port", default=8888, help="run on the given port", type=int)
 
+
 def do_reverse(mystring):
     return ''.join(reversed(mystring))
+
 
 def do_test_datatypes():
     return test_datatypes
 
+
 class TestHandler(RPCSocketHandler):
-    procedures={
+    procedures = {
         'reverse': Procedure(do_reverse),
         'test_datatypes': Procedure(do_test_datatypes),
-        }
+    }
+
 
 class Application(tornado.web.Application):
+
     def __init__(self):
         handlers = [
             (r"/jsonrpc", TestHandler),
         ]
         tornado.web.Application.__init__(self, handlers)
+
 
 def main():
     tornado.options.parse_command_line()
