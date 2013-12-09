@@ -7,12 +7,11 @@ del(logging)
 from tornado.web import Application
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
-from websocketrpc.protocol import Protocol
 
 from tinyrpc.protocols.jsonrpc import JSONRPCProtocol, JSONRPCErrorResponse
 
 
-class Server(Protocol):
+class Server(object):
 
     @classmethod
     def get_argument_parser(cls, name='WebSocketRPC Server'):
