@@ -17,6 +17,13 @@ It depends on:
 .. _Tornado: http://tornadoweb.org/
 .. _tinyrpc: https://tinyrpc.readthedocs.org/en/latest/
 
+
+Docs
+----
+
+https://readthedocs.org/projects/websocketrpc/
+
+
 Installation
 ------------
 
