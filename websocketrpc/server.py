@@ -11,34 +11,7 @@ from tornado.websocket import WebSocketHandler
 from tinyrpc.protocols.jsonrpc import JSONRPCProtocol, JSONRPCErrorResponse
 
 
-class Server(object):
-
-    @classmethod
-    def get_argument_parser(cls, name='WebSocketRPC Server'):
-        parser = argparse.ArgumentParser(name)
-        parser.add_argument('--port', default=8888, type=int)
-        return parser
-
-    @classmethod
-    def parse_args_and_run(cls):
-        parser = cls.get_argument_parser()
-
-        args = parser.parse_args()
-
-        application = Application([
-            (r"/", cls, {'args': args}),
-        ])
-
-        try:
-            application.listen(args.port)
-        except Exception as exc:
-            raise exc.__class__('%s port: %s' % (exc, args.port))
-
-        IOLoop.instance().start()
-
-
 class RPCSocketHandler(WebSocketHandler):
-
     '''
     This is **not** a singleton. There is an instance for every client.
     '''
@@ -72,6 +45,31 @@ class RPCSocketHandler(WebSocketHandler):
     def return_result(self, result, json_request):
         response = json_request.respond(result)
         self.write_message(response.serialize())
+
+class Server(object):
+
+    @classmethod
+    def get_argument_parser(cls, name='WebSocketRPC Server'):
+        parser = argparse.ArgumentParser(name)
+        parser.add_argument('--port', default=8888, type=int)
+        return parser
+
+    @classmethod
+    def parse_args_and_run(cls):
+        parser = cls.get_argument_parser()
+
+        args = parser.parse_args()
+
+        application = Application([
+            (r"/", cls, {'args': args}),
+        ])
+
+        try:
+            application.listen(args.port)
+        except Exception as exc:
+            raise exc.__class__('%s port: %s' % (exc, args.port))
+
+        IOLoop.instance().start()
 
 
 class Procedure(object):

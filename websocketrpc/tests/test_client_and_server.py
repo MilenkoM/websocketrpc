@@ -12,24 +12,24 @@ from tornado.testing import AsyncHTTPTestCase, gen_test
 from tornado.websocket import websocket_connect
 import tornado.web
 
-import websocketrpc.tests.client
-from websocketrpc.tests import OK
-import websocketrpc.tests.server
+import websocketrpc
+from websocketrpc.server import Procedure
+from websocketrpc.tests import OK, test_datatypes
 
-
-class TestRpcClient(websocketrpc.tests.client.TestClient):
+class TestRpcClient(websocketrpc.Client):
 
     def __init__(self, ioloop, test_case):
-        websocketrpc.tests.client.TestClient.__init__(self, ioloop=ioloop)
+        websocketrpc.Client.__init__(self, ioloop=ioloop)
         self.test_case = test_case
         self.reply_n_times_seen = set()
 
     def ok(self):
         return self.test_case.stop(OK)
 
-    def ws_connection_cb(self, conn):
-        # Called after the websocket to the server is connected.
-        websocketrpc.Client.ws_connection_cb(self, conn)
+    #def ws_connection_cb(self, conn):
+    #    assert 0
+    #    # Called after the websocket to the server is connected.
+    #    websocketrpc.Client.ws_connection_cb(self, conn)
 
     def on_reply_n_times(self, i):
         self.reply_n_times_seen.add(i)
@@ -42,10 +42,48 @@ class TestRpcClient(websocketrpc.tests.client.TestClient):
         self.test_case.assertEqual('''ValueError('foo',)''', message.error)
         return self.test_case.stop(OK)
 
-class TestRpcHandler(websocketrpc.tests.server.TestHandler):
+    def on_reverse_reply(self, mystring):
+        assert mystring == 'dcba', mystring
+        logger.info('reverse OK')
+        self.ok()
+
+    def on_fail_reply(self, data):
+        raise Exception(data)
+
+    def on_error_good(self, error_response):
+        assert error_response.error == "Method 'foo' not implemented", error_response.error
+        logger.info(
+            'error_response ... good, that is what I wanted: %s' %
+            error_response.serialize())
+        self.ok()
+
+    def on_error_fail(self, error_response):
+        raise Exception(error_response.serialize())
+
+    def on_test_datatypes_reply(self, result):
+        assert result == test_datatypes
+        logging.info('test_datatypes: OK')
+        self.ok()
+
+def do_reverse(mystring):
+    return ''.join(reversed(mystring))
+
+
+def do_test_datatypes():
+    return test_datatypes
+
+def raise_exception():
+    raise ValueError('foo')
+
+class TestRpcHandler(websocketrpc.server.RPCSocketHandler):
+    procedures = {
+        'reverse': Procedure(do_reverse),
+        'test_datatypes': Procedure(do_test_datatypes),
+        'raise_exception': Procedure(raise_exception),
+    }
 
     def __init__(self, *args, **kwargs):
-        websocketrpc.tests.server.TestHandler.__init__(self, *args, **kwargs)
+        websocketrpc.server.RPCSocketHandler.__init__(self, *args, **kwargs)
         self.procedures = dict(self.procedures)  # class level to object level
         self.procedures.update({
             'reply_n_times': self.reply_n_times,
@@ -70,10 +108,10 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers)
 
 
+
 class TestRpc(AsyncHTTPTestCase):
 
     def get_app(self):
-        from websocketrpc.tests import server
         return Application()
 
     @gen_test
