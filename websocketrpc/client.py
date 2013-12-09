@@ -74,7 +74,6 @@ class Client(object):
     def call(self, func_str, args=None, kwargs=None, on_reply=None, on_error=None):
         '''
          Caller calls func on remote
-         Example myclient.call_func(Server.FUNC_FOO, self.ws_connection, mydata) # TODO: make self.ws_connection optional.
          '''
         json_request=self.protocol.create_request(func_str, args=args, kwargs=kwargs)
         request=ClientRequest(json_request, self.ws_connection, on_reply, on_error)

@@ -10,7 +10,7 @@ import tornado.websocket
 import os.path
 
 from tornado.options import define, options
-from websocketrpc.server import RPCSocketHandler
+from websocketrpc.server import RPCSocketHandler, Procedure
 from websocketrpc.tests import test_datatypes
 
 define("port", default=8888, help="run on the given port", type=int)
@@ -23,8 +23,8 @@ def do_test_datatypes():
 
 class TestHandler(RPCSocketHandler):
     procedures={
-        'reverse': do_reverse,
-        'test_datatypes': do_test_datatypes,
+        'reverse': Procedure(do_reverse),
+        'test_datatypes': Procedure(do_test_datatypes),
         }
 
 class Application(tornado.web.Application):
