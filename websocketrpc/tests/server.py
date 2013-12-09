@@ -23,11 +23,14 @@ def do_reverse(mystring):
 def do_test_datatypes():
     return test_datatypes
 
+def raise_exception():
+    raise ValueError('foo')
 
 class TestHandler(RPCSocketHandler):
     procedures = {
         'reverse': Procedure(do_reverse),
         'test_datatypes': Procedure(do_test_datatypes),
+        'raise_exception': Procedure(raise_exception),
     }
 
 

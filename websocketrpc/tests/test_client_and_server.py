@@ -37,7 +37,10 @@ class TestRpcClient(websocketrpc.tests.client.TestClient):
                 None,  # This is from the first call. 3 calls follow later.
                 0, 1, 2]):
             self.test_case.stop(OK)
-
+            
+    def on_exception_good(self, message):
+        self.test_case.assertEqual('''ValueError('foo',)''', message.error)
+        return self.test_case.stop(OK)
 
 class TestRpcHandler(websocketrpc.tests.server.TestHandler):
 
@@ -106,4 +109,10 @@ class TestRpc(AsyncHTTPTestCase):
             args=[3],
             on_reply=client.on_reply_n_times,
             on_error=client.on_error_fail)
+        self.assertEqual(OK, self.wait())
+
+        client.call(
+            'raise_exception',
+            on_reply=client.on_fail_reply,
+            on_error=client.on_exception_good)
         self.assertEqual(OK, self.wait())

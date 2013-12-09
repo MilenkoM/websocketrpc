@@ -60,7 +60,13 @@ class RPCSocketHandler(WebSocketHandler):
                 json_request.method)
             self.write_message(response.serialize())
             return
-        result = callback(json_request)
+        try:
+            result = callback(json_request)
+        except Exception, exc:
+            response = json_request.error_respond(repr(exc))
+            self.write_message(response.serialize())
+            return
+            
         return self.return_result(result, json_request)
 
     def return_result(self, result, json_request):
