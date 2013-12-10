@@ -94,9 +94,6 @@ class Client(object):
             self.ws_connection,
             on_reply,
             on_error)
-        logger.info(
-            'call_func %s connection=%s' %
-            (request, self.ws_connection))
         request.ws_connection.write_message(request.serialize())
         self.wait_for_reply[request.unique_id] = request
 
