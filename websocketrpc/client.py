@@ -126,9 +126,9 @@ class Client(object):
         self.ioloop.stop()
 
     @classmethod
-    def get_argument_parser(cls):
+    def get_argument_parser(cls, default_url='ws://localhost:8888/jsonrpc'):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--url', default='ws://localhost:8888/jsonrpc')
+        parser.add_argument('--url', default=default_url)
         return parser
 
     @classmethod

@@ -48,7 +48,7 @@ class RPCSocketHandler(WebSocketHandler):
         self.write_message(response.serialize())
 
 
-class Server(object):
+class Server(object): # TODO: use Application like in tornado.
 
     @classmethod
     def get_argument_parser(cls, name='WebSocketRPC Server'):
