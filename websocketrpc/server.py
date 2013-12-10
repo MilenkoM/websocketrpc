@@ -37,6 +37,7 @@ class RPCSocketHandler(WebSocketHandler):
         try:
             result = callback(json_request)
         except Exception as exc:
+            logger.error(exc, exc_info=True)
             response = json_request.error_respond(repr(exc))
             self.write_message(response.serialize())
             return
