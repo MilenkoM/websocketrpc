@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 del(logging)
 
-from tornado import websocket
+from tornado import websocket, httpclient
 from tornado.ioloop import IOLoop
 from tinyrpc.protocols.jsonrpc import JSONRPCProtocol, JSONRPCErrorResponse, JSONRPCSuccessResponse
 
@@ -68,7 +68,7 @@ class Client(object):
 
     def connect(self):
         #logger.info('connect %s' % self.args)
-        self.ws = websocket.websocket_connect(self.args.url)
+        self.ws = websocket_connect(self.args.url)
         self.ws.add_done_callback(self.ws_connection_cb)
         return self.ws
 
@@ -161,3 +161,22 @@ class Client(object):
             request.on_reply(json_reply.result)
             return
         raise ValueError('unsupported reply: %r' % json_reply)
+
+# copy of tornado, to overwrite SSL Options
+def websocket_connect(url, io_loop=None, callback=None, connect_timeout=None):
+    """Client-side websocket support.
+
+    Takes a url and returns a Future whose result is a
+    `WebSocketClientConnection`.
+    """
+    if io_loop is None:
+        io_loop = IOLoop.current()
+    request = httpclient.HTTPRequest(url, connect_timeout=connect_timeout, 
+                                     validate_cert=False, # TODO
+                                     )
+    request = httpclient._RequestProxy(
+        request, httpclient.HTTPRequest._DEFAULTS)
+    conn = websocket.WebSocketClientConnection(io_loop, request)
+    if callback is not None:
+        io_loop.add_future(conn.connect_future, callback)
+    return conn.connect_future
