@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import os, re
 import setuptools
 
@@ -37,6 +40,9 @@ setuptools.setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ],
+    author='Thomas Güttler',
+    author_email='guettli.websocketrpc@thomas-guettler.de',
+    url='https://github.com/guettli/websocketrpc',
     install_requires=[
         'tornado',
         'tinyrpc',
