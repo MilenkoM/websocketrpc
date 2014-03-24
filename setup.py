@@ -9,6 +9,7 @@ def read(fname):
 # Why read it, and not import?
 # see https://groups.google.com/d/topic/pypa-dev/0PkjVpcxTzQ/discussion
 def find_version(*file_paths):
+    import codecs
     # Open in Latin-1 so that we avoid encoding errors.
     # Use codecs.open for Python 2 compatibility
     with codecs.open(os.path.join(here, *file_paths), 'r', 'latin1') as f:
