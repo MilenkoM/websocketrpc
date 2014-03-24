@@ -3,8 +3,6 @@ websocketrpc
 
 This is a small RPC (Remote Procedure Call) module, which uses WebSockets as transport layer.
 
-It depends on two libraries:
-
 It depends on:
 
   * Python_
