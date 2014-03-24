@@ -1,3 +1,5 @@
+__version__='0.2.0'
+
 from server import Server
 from client import Client
 
